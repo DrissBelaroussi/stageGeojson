@@ -1,41 +1,53 @@
 <?php
-
 //Argument 1 : regions - Argument 2 : districts - Argument 3 : destination file
 mergeBruxellesIntoDistricts();
 
 function mergeBruxellesIntoDistricts(){
-  $arrayData = getJsonFilesInArray();
-  $districtsWithoutFeatures = getDataWithoutFeatures($arrayData["districts"]);
-  $regionsFeatures = getDataFeatures($arrayData["regions"]);
-  $districtsFeatures = getDataFeatures($arrayData["districts"]);
+  $FilesContentInArray = getJsonFilesInArray(getArgument("regions") , getArgument("districts"));
+  $districtsWithoutFeatures = splitDataFromFeatures($FilesContentInArray["districts"]);
+  $regionsFeatures = getDataFeatures($FilesContentInArray["regions"]);
+  $districtsFeatures = getDataFeatures($FilesContentInArray["districts"]);
   $bruxelles = getBruxelles($regionsFeatures);
   $districtsFeatures = getFinalDistrictsFeatures($districtsFeatures,$bruxelles);
   $completeContent = mergeContent($districtsWithoutFeatures ,$districtsFeatures );
-  createFinalJsonFile($completeContent);
+  createFinalJsonFile($completeContent,getArgument("destinationFile") );
+}
+function getArgument($arg){
+  $argument ;
+  switch($arg){
+    case "regions" :
+      $argument = $_SERVER['argv'][1];
+      break;
+    case "districts" :
+      $argument = $_SERVER['argv'][2];
+      break;
+    case "destinationFile" :
+      $argument = $_SERVER['argv'][3];
+      break;
+    default:
+      break;
+  }
+  return $argument;
 }
 
-function getJsonFilesInArray(){
-  $arrayData = array();
-  $regionsFile = file_get_contents($_SERVER['argv'][1]);
-  $districtsFile = file_get_contents($_SERVER['argv'][2]) ;
-  $arrayData["regions"] = json_decode($regionsFile,true);
-  $arrayData["districts"] = json_decode($districtsFile,true);
-  return $arrayData ;
+function getJsonFilesInArray($regionsFile,$districtsFile){
+  $FilesContentInArray = array();
+  $FilesContentInArray["regions"] = json_decode(file_get_contents($regionsFile),true);
+  $FilesContentInArray["districts"] = json_decode(file_get_contents($districtsFile),true);
+  return $FilesContentInArray ;
 }
 
-function getDataWithoutFeatures($arrayData){
-  $arrayData["features"] = [];
-  return $arrayData;
+function splitDataFromFeatures($FilesContentInArray){
+  $FilesContentInArray["features"] = [];
+  return $FilesContentInArray;
 }
 
-function getDataFeatures($arrayData){
-  $features = $arrayData["features"];
-  return $features;
+function getDataFeatures($FilesContentInArray){
+  return $FilesContentInArray["features"];
 }
 
-function getBruxelles($arrayData){
-  $bruxelles = $arrayData[0];
-  return $bruxelles;
+function getBruxelles($FilesContentInArray){
+  return $FilesContentInArray[0];
 }
 
 function getFinalDistrictsFeatures($districts , $bruxelles){
@@ -49,9 +61,9 @@ function mergeContent($withoutFeatures ,$districtsFeatures ){
   return $completeContent ;
 }
 
-function createFinalJsonFile($completeContent){
+function createFinalJsonFile($completeContent,$destFile){
   $completeContent = json_encode($completeContent);
-  file_put_contents($_SERVER['argv'][3], $completeContent);
+  file_put_contents($destFile, $completeContent);
   var_dump($completeContent); //(Optional)
 }
 ?>
